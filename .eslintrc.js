@@ -2,19 +2,19 @@ module.exports = {
   root: true,
   extends: [
     'eslint:recommended',
-    '@typescript-eslint/recommended',
-    'prettier'
+    'plugin:@typescript-eslint/recommended',
+    'prettier',
   ],
   parser: '@typescript-eslint/parser',
   plugins: ['@typescript-eslint'],
   parserOptions: {
     ecmaVersion: 2022,
-    sourceType: 'module'
+    sourceType: 'module',
   },
   env: {
     browser: true,
     es2022: true,
-    node: true
+    node: true,
   },
   rules: {
     '@typescript-eslint/no-unused-vars': 'error',
@@ -22,14 +22,14 @@ module.exports = {
     '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/no-empty-function': 'off',
-    'no-console': 'warn'
+    'no-console': 'warn',
   },
   overrides: [
     {
       files: ['**/*.test.ts', '**/*.test.tsx'],
       env: {
-        jest: true
-      }
-    }
-  ]
-}; 
+        jest: true,
+      },
+    },
+  ],
+};
