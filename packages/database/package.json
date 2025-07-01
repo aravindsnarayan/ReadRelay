@@ -1,0 +1,16 @@
+{
+  "name": "@readrelay/database",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Database schema and migrations for ReadRelay Supabase backend",
+  "scripts": {
+    "migrate": "supabase db push",
+    "reset": "supabase db reset",
+    "generate-types": "supabase gen types typescript --local > ../shared/src/types/database.ts",
+    "lint": "echo 'No linting for SQL files'",
+    "type-check": "echo 'No TypeScript for database package'"
+  },
+  "devDependencies": {
+    "supabase": "^1.123.4"
+  }
+}
