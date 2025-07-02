@@ -1,0 +1,10 @@
+node_modules/
+.next/
+.turbo/
+build/
+dist/
+coverage/
+public/sw.js
+public/workbox-*.js
+**/next.config.js
+**/tailwind.config.js 

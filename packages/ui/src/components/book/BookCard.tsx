@@ -1,17 +1,20 @@
 import React from 'react';
 import { Card, CardBody } from '../base/Card';
 import { Heading, Text, SmallText } from '../base/Typography';
+// TODO: Import from @readrelay/shared once package build configuration is fixed
+type BookCondition = 'excellent' | 'good' | 'fair' | 'poor';
+type AvailabilityStatus = 'available' | 'exchanging' | 'unavailable';
 
 export interface BookCardProps {
   book: {
     id: string;
     title: string;
     author: string;
-    isbn?: string;
+    isbn?: string | null;
+    description?: string | null;
+    condition: BookCondition;
+    availability_status?: AvailabilityStatus | null;
     coverUrl?: string;
-    condition: 'excellent' | 'good' | 'fair' | 'poor';
-    description?: string;
-    availabilityStatus: 'available' | 'reserved' | 'borrowed' | 'unavailable';
     ownerUsername?: string;
     location?: {
       city: string;
@@ -25,17 +28,16 @@ export interface BookCardProps {
   className?: string;
 }
 
-const conditionColors = {
+const conditionColors: Record<BookCondition, string> = {
   excellent: 'text-success-600 bg-success-50',
   good: 'text-primary-600 bg-primary-50',
   fair: 'text-warning-600 bg-warning-50',
   poor: 'text-error-600 bg-error-50',
 };
 
-const statusColors = {
+const statusColors: Record<AvailabilityStatus, string> = {
   available: 'text-success-600 bg-success-50',
-  reserved: 'text-warning-600 bg-warning-50',
-  borrowed: 'text-secondary-600 bg-secondary-50',
+  exchanging: 'text-warning-600 bg-warning-50',
   unavailable: 'text-error-600 bg-error-50',
 };
 
@@ -93,9 +95,9 @@ export const BookCard: React.FC<BookCardProps> = ({
         </SmallText>
         <div className="flex flex-wrap gap-2 mt-2">
           <span
-            className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[book.availabilityStatus]}`}
+            className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[(book.availability_status as AvailabilityStatus) || 'available']}`}
           >
-            {book.availabilityStatus}
+            {book.availability_status || 'available'}
           </span>
         </div>
       </div>
@@ -119,12 +121,12 @@ export const BookCard: React.FC<BookCardProps> = ({
 
         <div className="flex flex-wrap gap-2 mb-3">
           <span
-            className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[book.availabilityStatus]}`}
+            className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[(book.availability_status as AvailabilityStatus) || 'available']}`}
           >
-            {book.availabilityStatus}
+            {book.availability_status || 'available'}
           </span>
           <span
-            className={`px-2 py-1 rounded-full text-xs font-medium ${conditionColors[book.condition]}`}
+            className={`px-2 py-1 rounded-full text-xs font-medium ${conditionColors[book.condition as BookCondition]}`}
           >
             {book.condition}
           </span>
@@ -191,12 +193,12 @@ export const BookCard: React.FC<BookCardProps> = ({
 
           <div className="flex flex-wrap gap-2 mb-4">
             <span
-              className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[book.availabilityStatus]}`}
+              className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[(book.availability_status as AvailabilityStatus) || 'available']}`}
             >
-              {book.availabilityStatus}
+              {book.availability_status || 'available'}
             </span>
             <span
-              className={`px-3 py-1 rounded-full text-sm font-medium ${conditionColors[book.condition]}`}
+              className={`px-3 py-1 rounded-full text-sm font-medium ${conditionColors[book.condition as BookCondition]}`}
             >
               {book.condition} condition
             </span>

@@ -3,8 +3,21 @@
   "version": "0.1.0",
   "private": true,
   "description": "Shared configurations for ReadRelay monorepo",
+  "main": "eslint.js",
+  "files": [
+    "eslint.js"
+  ],
   "scripts": {
     "lint": "echo 'No linting for config files'",
     "type-check": "echo 'No TypeScript for config package'"
+  },
+  "dependencies": {
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "eslint-config-prettier": "^9.1.0"
+  },
+  "peerDependencies": {
+    "eslint": "^8.0.0",
+    "typescript": "^5.0.0"
   }
 }

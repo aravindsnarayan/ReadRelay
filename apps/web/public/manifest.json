@@ -1,0 +1,44 @@
+{
+  "name": "ReadRelay - Book Sharing Community",
+  "short_name": "ReadRelay",
+  "description": "Share books with your local community. Discover new reads and connect with fellow book lovers nearby.",
+  "theme_color": "#2563eb",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "/icon-192x192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icon-512x512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Browse Books",
+      "short_name": "Browse",
+      "description": "Find books available for sharing",
+      "url": "/browse",
+      "icons": [{ "src": "/icon-192x192.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "My Dashboard",
+      "short_name": "Dashboard",
+      "description": "View your books and exchanges",
+      "url": "/dashboard",
+      "icons": [{ "src": "/icon-192x192.svg", "sizes": "192x192" }]
+    }
+  ],
+  "categories": ["books", "education", "social"],
+  "lang": "en-US",
+  "dir": "ltr"
+}

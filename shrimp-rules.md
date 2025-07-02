@@ -101,12 +101,14 @@ readrelay/
 ### Platform-Specific Rules
 
 #### Web Application (Next.js)
+
 - **USE** Server Components for data fetching when possible
 - **IMPLEMENT** ISR (Incremental Static Regeneration) for book listings
 - **ENABLE** PWA capabilities with service worker
 - **USE** Next.js Image component for optimized images
 
 #### Mobile Application (React Native)
+
 - **IMPLEMENT** deep linking for book sharing
 - **USE** React Native Paper for consistent Material Design
 - **INTEGRATE** camera functionality for ISBN scanning
@@ -263,11 +265,13 @@ export default ComponentName;
 ### Platform Deployment
 
 #### Web Deployment
+
 - **DEPLOY** to Supabase hosting or Vercel
 - **IMPLEMENT** automatic deployments from main branch
 - **ENABLE** preview URLs for testing
 
 #### Mobile Deployment
+
 - **USE** Expo Application Services (EAS) for builds
 - **IMPLEMENT** over-the-air updates for minor changes
 - **MAINTAIN** separate staging and production builds
@@ -311,4 +315,4 @@ export default ComponentName;
 - **NEVER** implement user authentication without encryption
 - **NEVER** allow unrestricted file uploads
 
-This document serves as the authoritative guide for all ReadRelay development activities. All AI agents must strictly follow these standards to ensure consistency, security, and maintainability across the entire application ecosystem. 
+This document serves as the authoritative guide for all ReadRelay development activities. All AI agents must strictly follow these standards to ensure consistency, security, and maintainability across the entire application ecosystem.
