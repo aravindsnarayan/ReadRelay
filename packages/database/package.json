@@ -2,12 +2,15 @@
   "name": "@readrelay/database",
   "version": "0.1.0",
   "private": true,
-  "description": "Database schema and migrations for ReadRelay Supabase backend",
+  "description": "Database utilities and documentation for ReadRelay Supabase backend",
   "scripts": {
-    "migrate": "supabase db push",
-    "reset": "supabase db reset",
-    "generate-types": "supabase gen types typescript --local > ../shared/src/types/database.ts",
-    "lint": "echo 'No linting for SQL files'",
+    "migrate": "cd ../../ && supabase db push",
+    "reset": "cd ../../ && supabase db reset",
+    "generate-types": "cd ../../ && supabase gen types typescript --local > packages/shared/src/types/database.ts",
+    "start": "cd ../../ && supabase start",
+    "stop": "cd ../../ && supabase stop",
+    "status": "cd ../../ && supabase status",
+    "lint": "echo 'No linting for database utilities'",
     "type-check": "echo 'No TypeScript for database package'"
   },
   "devDependencies": {

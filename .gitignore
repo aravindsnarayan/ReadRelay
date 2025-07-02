@@ -65,6 +65,7 @@ next-env.d.ts
 # Temporary folders
 tmp/
 temp/
+data/
 
 # Editor directories and files
 .vscode/
@@ -84,3 +85,4 @@ Thumbs.db
 
 # Supabase
 .supabase
+prd.txt

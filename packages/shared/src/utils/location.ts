@@ -71,21 +71,42 @@ export const calculateBounds = (
   };
 };
 
-// Generate PostGIS query for radius search
+// Generate radius search query using latitude/longitude fields
 export const generateRadiusQuery = (
   center: Coordinates,
   radiusKm: number,
-  locationColumn: string = 'location_point'
+  latColumn: string = 'location_latitude',
+  lngColumn: string = 'location_longitude'
 ): string => {
-  return `ST_DWithin(${locationColumn}, ST_MakePoint(${center.longitude}, ${center.latitude})::geography, ${radiusKm * 1000})`;
+  // Using haversine distance formula for radius search
+  const radiusInDegrees = radiusKm / 111.32; // Rough conversion: 1 degree ≈ 111.32 km
+  return `
+    (${latColumn} IS NOT NULL AND ${lngColumn} IS NOT NULL) AND
+    (
+      (${latColumn} - ${center.latitude}) * (${latColumn} - ${center.latitude}) + 
+      (${lngColumn} - ${center.longitude}) * (${lngColumn} - ${center.longitude}) * 
+      COS(RADIANS(${center.latitude})) * COS(RADIANS(${center.latitude}))
+    ) <= ${radiusInDegrees * radiusInDegrees}
+  `.trim();
 };
 
-// Generate distance query for sorting
+// Generate distance calculation for sorting
 export const generateDistanceQuery = (
   center: Coordinates,
-  locationColumn: string = 'location_point'
+  latColumn: string = 'location_latitude',
+  lngColumn: string = 'location_longitude'
 ): string => {
-  return `ST_Distance(${locationColumn}, ST_MakePoint(${center.longitude}, ${center.latitude})::geography) as distance_meters`;
+  return `
+    CASE 
+      WHEN ${latColumn} IS NOT NULL AND ${lngColumn} IS NOT NULL THEN
+        111.32 * SQRT(
+          (${latColumn} - ${center.latitude}) * (${latColumn} - ${center.latitude}) + 
+          (${lngColumn} - ${center.longitude}) * (${lngColumn} - ${center.longitude}) * 
+          COS(RADIANS(${center.latitude})) * COS(RADIANS(${center.latitude}))
+        )
+      ELSE 999999
+    END as distance_km
+  `.trim();
 };
 
 // Validate coordinates

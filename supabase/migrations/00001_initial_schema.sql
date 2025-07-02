@@ -3,7 +3,6 @@
 
 -- Enable necessary extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "postgis";
 
 -- User profiles table (extends auth.users)
 CREATE TABLE profiles (
@@ -13,7 +12,8 @@ CREATE TABLE profiles (
     avatar_url TEXT,
     bio TEXT,
     location_text VARCHAR(200),
-    location_point GEOGRAPHY(POINT),
+    location_latitude DOUBLE PRECISION,
+    location_longitude DOUBLE PRECISION,
     preferred_meeting_locations TEXT[], -- Array of preferred meeting spots
     phone VARCHAR(20),
     is_verified BOOLEAN DEFAULT FALSE,
@@ -171,7 +171,8 @@ CREATE TABLE book_reports (
 
 -- Create indexes for better performance
 CREATE INDEX idx_profiles_username ON profiles(username);
-CREATE INDEX idx_profiles_location ON profiles USING GIST(location_point);
+CREATE INDEX idx_profiles_location_lat ON profiles(location_latitude);
+CREATE INDEX idx_profiles_location_lng ON profiles(location_longitude);
 CREATE INDEX idx_books_owner_id ON books(owner_id);
 CREATE INDEX idx_books_title ON books(title);
 CREATE INDEX idx_books_author ON books(author);

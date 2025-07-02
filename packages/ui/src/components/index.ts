@@ -1,8 +1,20 @@
-// Shared UI components for ReadRelay
-// This file will export React components used across web and mobile platforms
+// ReadRelay UI Components
+// Comprehensive component library for web and mobile platforms
 
-export const PlaceholderComponent = () => {
-  return 'ReadRelay UI Component Placeholder';
-};
+// Base Components
+export * from './base';
 
-// TODO: Add actual UI components (Button, Input, Card, etc.) 
+// Form Components
+export * from './forms';
+
+// Book Components
+export * from './book';
+
+// User Components
+export * from './user';
+
+// Messaging Components
+export * from './messaging';
+
+// Feedback Components
+export * from './feedback';
