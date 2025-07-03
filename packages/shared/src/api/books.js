@@ -284,36 +284,119 @@ export const uploadBookCover = async (bookId, file) => {
         };
     }
 };
-// Get book by ISBN from external API (Google Books)
-export const getBookByISBN = async (isbn) => {
+// Enhanced Google Books API with rate limiting and error handling
+export const getBookByISBN = async (isbn, retryCount = 0) => {
     try {
-        const googleBooksResponse = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
+        // Create AbortController for timeout handling
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        const googleBooksResponse = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        // Handle rate limiting with exponential backoff
+        if (googleBooksResponse.status === 429) {
+            if (retryCount < 3) {
+                const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff: 1s, 2s, 4s
+                // eslint-disable-next-line no-console
+                console.warn(`Rate limit exceeded, retrying in ${delay}ms (attempt ${retryCount + 1}/3)`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+                return getBookByISBN(isbn, retryCount + 1);
+            }
+            return {
+                success: false,
+                error: 'Rate limit exceeded. Please try again later.'
+            };
+        }
+        if (!googleBooksResponse.ok) {
+            // Try fallback to Open Library API
+            if (retryCount === 0) {
+                // eslint-disable-next-line no-console
+                console.warn('Google Books API failed, trying Open Library fallback');
+                return getBookByISBNFromOpenLibrary(isbn);
+            }
+            return {
+                success: false,
+                error: `Google Books API error: ${googleBooksResponse.status}`
+            };
+        }
         const googleData = await googleBooksResponse.json();
         if (googleData.items && googleData.items.length > 0) {
             const book = googleData.items[0].volumeInfo;
             return {
                 success: true,
                 book: {
-                    title: book.title,
+                    title: book.title || '',
                     author: book.authors?.[0] || 'Unknown Author',
                     isbn,
-                    description: book.description,
-                    cover_image_url: book.imageLinks?.thumbnail,
+                    description: book.description || '',
+                    // Request higher resolution cover image
+                    cover_image_url: book.imageLinks?.thumbnail?.replace('zoom=1', 'zoom=2') ||
+                        book.imageLinks?.smallThumbnail?.replace('zoom=1', 'zoom=2'),
                     publication_year: book.publishedDate
                         ? parseInt(book.publishedDate.split('-')[0])
                         : undefined,
-                    publisher: book.publisher,
-                    genre: book.categories?.[0],
-                    language: book.language,
+                    publisher: book.publisher || '',
+                    genre: book.categories?.[0] || '',
+                    language: book.language || 'en',
+                },
+            };
+        }
+        // If no results from Google Books, try Open Library as fallback
+        return getBookByISBNFromOpenLibrary(isbn);
+    }
+    catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') {
+            return { success: false, error: 'Request timeout. Please try again.' };
+        }
+        // Try fallback API on network errors
+        if (retryCount === 0) {
+            // eslint-disable-next-line no-console
+            console.warn('Google Books API network error, trying Open Library fallback');
+            return getBookByISBNFromOpenLibrary(isbn);
+        }
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to fetch book data',
+        };
+    }
+};
+// Fallback to Open Library API
+const getBookByISBNFromOpenLibrary = async (isbn) => {
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
+        const response = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (!response.ok) {
+            return { success: false, error: 'Book not found in any database' };
+        }
+        const data = await response.json();
+        const bookKey = `ISBN:${isbn}`;
+        if (data[bookKey]) {
+            const book = data[bookKey];
+            return {
+                success: true,
+                book: {
+                    title: book.title || '',
+                    author: book.authors?.[0]?.name || 'Unknown Author',
+                    isbn,
+                    description: book.description || '',
+                    cover_image_url: book.cover?.large || book.cover?.medium || book.cover?.small || '',
+                    publication_year: book.publish_date ? parseInt(book.publish_date) : undefined,
+                    publisher: book.publishers?.[0]?.name || '',
+                    genre: book.subjects?.[0]?.name || '',
+                    language: 'en', // Open Library doesn't always provide language
                 },
             };
         }
         return { success: false, error: 'Book not found' };
     }
     catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') {
+            return { success: false, error: 'Request timeout. Please try again.' };
+        }
         return {
             success: false,
-            error: error instanceof Error ? error.message : 'Failed to fetch book data',
+            error: 'Book not found in any database'
         };
     }
 };
