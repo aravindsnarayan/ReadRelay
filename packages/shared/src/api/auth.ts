@@ -410,6 +410,13 @@ export const onAuthStateChange = (callback: (user: User | null) => void) => {
   });
 };
 
+// Export aliases for consistency with page imports
+export const login = loginUser;
+export const register = registerUser;
+export const logout = logoutUser;
+export const updateProfile = updateUserProfile;
+export const createProfile = createUserProfile;
+
 // Upload avatar image
 export const uploadAvatarImage = async (
   file: File

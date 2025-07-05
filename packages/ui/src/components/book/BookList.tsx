@@ -18,6 +18,11 @@ interface BookListProps {
   onBookClick: (bookId: string) => void;
   isLoading?: boolean;
   className?: string;
+  showOwner?: boolean;
+  actions?: {
+    edit?: (bookId: string) => void;
+    delete?: (bookId: string) => void;
+  };
 }
 
 const StatusBadge: React.FC<{
@@ -88,6 +93,8 @@ export const BookList: React.FC<BookListProps> = ({
   onBookClick,
   isLoading = false,
   className = '',
+  showOwner = true,
+  actions,
 }) => {
   if (books.length === 0 && !isLoading) {
     return (
@@ -146,10 +153,40 @@ export const BookList: React.FC<BookListProps> = ({
 
             <div className="flex items-center justify-between">
               <ConditionBadge condition={book.condition} />
-              <SmallText color="secondary" className="text-right">
-                {book.ownerName}
-              </SmallText>
+              {showOwner && (
+                <SmallText color="secondary" className="text-right">
+                  {book.ownerName}
+                </SmallText>
+              )}
             </div>
+
+            {/* Action buttons */}
+            {actions && (
+              <div className="mt-3 flex gap-2">
+                {actions.edit && (
+                  <button
+                    onClick={e => {
+                      e.stopPropagation();
+                      actions.edit?.(book.id);
+                    }}
+                    className="flex-1 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
+                  >
+                    Edit
+                  </button>
+                )}
+                {actions.delete && (
+                  <button
+                    onClick={e => {
+                      e.stopPropagation();
+                      actions.delete?.(book.id);
+                    }}
+                    className="flex-1 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100 transition-colors"
+                  >
+                    Delete
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
       ))}
