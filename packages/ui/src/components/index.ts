@@ -4,7 +4,7 @@
 // Base Components
 export * from './base';
 
-// Form Components (temporarily disabled due to react-hook-form compilation issues)
+// Form Components - TODO: Fix react-hook-form imports
 // export * from './forms';
 
 // Book Components

@@ -64,7 +64,7 @@ export const availabilityStatusSchema = z.enum([
 export const bookSchema = z.object({
   title: z.string().min(1, 'Title is required').max(255),
   author: z.string().min(1, 'Author is required').max(255),
-  isbn: z.string().optional(),
+  isbn: z.string().max(20).optional(), // Database varchar(20) constraint
   description: z.string().max(2000).optional(),
   publisher: z.string().max(200).optional(),
   publication_year: z
@@ -101,7 +101,7 @@ export const exchangeStatusSchema = z.enum([
 export const exchangeSchema = z.object({
   book_id: uuidSchema,
   exchange_type: exchangeTypeSchema,
-  return_date: z.string().datetime().optional(),
+  return_date: z.string().optional(), // Database expects DATE format, not datetime
   meeting_location: z.string().max(500).optional(),
   meeting_datetime: z.string().datetime().optional(),
   notes: z.string().max(1000).optional(),
@@ -154,7 +154,7 @@ export const wishlistPrioritySchema = z.enum(['low', 'medium', 'high']);
 export const wishlistSchema = z.object({
   title: z.string().min(1, 'Title is required').max(255),
   author: z.string().max(255).optional(),
-  isbn: z.string().optional(),
+  isbn: z.string().max(20).optional(), // Database varchar(20) constraint
   description: z.string().max(1000).optional(),
   priority: wishlistPrioritySchema.default('medium'),
   notification_enabled: z.boolean().default(true),
@@ -174,22 +174,17 @@ export const radiusSearchSchema = z.object({
 });
 
 // Search and filter validation
-export const bookSearchSchema = z
-  .object({
-    query: z.string().optional(),
-    author: z.string().optional(),
-    genre: z.string().optional().nullable(),
-    condition: bookConditionSchema.optional(),
-    exchange_type: exchangeTypeSchema.optional(),
-    availability_status: availabilityStatusSchema.optional(),
-    owner_id: uuidSchema.optional(),
-    limit: z.number().min(1).max(100).default(20),
-    offset: z.number().min(0).default(0),
-  })
-  .transform(data => ({
-    ...data,
-    genre: data.genre || undefined, // Convert null to undefined
-  }));
+export const bookSearchSchema = z.object({
+  query: z.string().optional(),
+  author: z.string().optional(),
+  genre: z.string().optional(),
+  condition: bookConditionSchema.optional(),
+  exchange_type: exchangeTypeSchema.optional(),
+  availability_status: availabilityStatusSchema.optional(),
+  owner_id: uuidSchema.optional(),
+  limit: z.number().min(1).max(100).default(20),
+  offset: z.number().min(0).default(0),
+});
 
 // Authentication validation
 export const loginSchema = z.object({

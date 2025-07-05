@@ -1,9 +1,7 @@
 import React from 'react';
 import { Card, CardBody } from '../base/Card';
 import { Heading, Text, SmallText } from '../base/Typography';
-// TODO: Import from @readrelay/shared once package build configuration is fixed
-type BookCondition = 'excellent' | 'good' | 'fair' | 'poor';
-type AvailabilityStatus = 'available' | 'exchanging' | 'unavailable';
+import type { BookCondition, AvailabilityStatus } from '@readrelay/shared';
 
 export interface BookCardProps {
   book: {
@@ -14,7 +12,7 @@ export interface BookCardProps {
     description?: string | null;
     condition: BookCondition;
     availability_status?: AvailabilityStatus | null;
-    coverUrl?: string;
+    cover_image_url?: string | null;
     ownerUsername?: string;
     location?: {
       city: string;
@@ -54,10 +52,10 @@ export const BookCard: React.FC<BookCardProps> = ({
   };
 
   const renderCover = () => {
-    if (book.coverUrl) {
+    if (book.cover_image_url) {
       return (
         <img
-          src={book.coverUrl}
+          src={book.cover_image_url}
           alt={`${book.title} cover`}
           className="w-16 h-20 object-cover rounded-md bg-secondary-100"
         />
@@ -152,9 +150,9 @@ export const BookCard: React.FC<BookCardProps> = ({
     <div className="space-y-4">
       <div className="flex gap-4">
         <div className="w-24 h-32 flex-shrink-0">
-          {book.coverUrl ? (
+          {book.cover_image_url ? (
             <img
-              src={book.coverUrl}
+              src={book.cover_image_url}
               alt={`${book.title} cover`}
               className="w-full h-full object-cover rounded-md bg-secondary-100"
             />

@@ -391,7 +391,10 @@ export const deleteMessage = async (
 
     const { error } = await supabase
       .from('messages')
-      .update({ content: '[Message deleted]', is_deleted: true })
+      .update({
+        content: '[Message deleted]',
+        deleted_at: new Date().toISOString(),
+      })
       .eq('id', messageId)
       .eq('sender_id', user.id);
 

@@ -425,7 +425,7 @@ export const uploadAvatarImage = async (
     const filePath = `avatars/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
-      .from('book-covers')
+      .from('avatars')
       .upload(filePath, file, {
         cacheControl: '3600',
         upsert: false,
@@ -436,7 +436,7 @@ export const uploadAvatarImage = async (
     }
 
     const { data: urlData } = supabase.storage
-      .from('book-covers')
+      .from('avatars')
       .getPublicUrl(filePath);
 
     // Update profile with new avatar URL

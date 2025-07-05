@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createBook, searchBooks, getUserBooks } from '@readrelay/shared/api/books';
-import { getCurrentUser } from '@readrelay/shared/api/auth';
+import {
+  createBook,
+  searchBooks,
+  getUserBooks,
+} from '@readrelay/shared/api/books';
 
 // GET /api/books - Search books or get user's books
 export async function GET(request: NextRequest) {
@@ -22,9 +25,11 @@ export async function GET(request: NextRequest) {
 
     // If location parameters are provided, search by location
     if (lat && lng) {
-      const { searchBooksByLocation } = await import('@readrelay/shared/api/books');
+      const { searchBooksByLocation } = await import(
+        '@readrelay/shared/api/books'
+      );
       const result = await searchBooksByLocation(
-        { lat: parseFloat(lat), lng: parseFloat(lng) },
+        { latitude: parseFloat(lat), longitude: parseFloat(lng) },
         radius ? parseInt(radius) : 10,
         limit,
         offset
@@ -34,7 +39,7 @@ export async function GET(request: NextRequest) {
 
     // Otherwise search books
     const searchParams_books = {
-      query: query || '',
+      query: query || undefined,
       limit,
       offset,
     };
@@ -54,7 +59,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
+
     // Validate required fields
     if (!body.title || !body.author) {
       return NextResponse.json(
@@ -64,7 +69,7 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await createBook(body);
-    
+
     if (result.success) {
       return NextResponse.json(result, { status: 201 });
     } else {
@@ -77,4 +82,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}

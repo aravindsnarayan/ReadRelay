@@ -1,11 +1,9 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../types/database';
+import { getSupabaseConfig } from '../utils/env';
 
-// Environment variables with fallbacks for development
-const SUPABASE_URL =
-  process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321';
-const SUPABASE_ANON_KEY =
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'your-anon-key-here';
+// Get validated Supabase configuration
+const { url: SUPABASE_URL, key: SUPABASE_ANON_KEY } = getSupabaseConfig();
 
 // Type-safe Supabase client
 export const supabase: SupabaseClient<Database> = createClient<Database>(
@@ -31,23 +29,22 @@ export const createSupabaseClient = (
   anonKey?: string,
   options?: Record<string, unknown>
 ): SupabaseClient<Database> => {
-  return createClient<Database>(
-    url || SUPABASE_URL,
-    anonKey || SUPABASE_ANON_KEY,
-    {
-      auth: {
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: true,
+  // Use provided values or fall back to validated environment config
+  const config = url && anonKey ? { url, key: anonKey } : getSupabaseConfig();
+
+  return createClient<Database>(config.url, config.key, {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+    },
+    realtime: {
+      params: {
+        eventsPerSecond: 10,
       },
-      realtime: {
-        params: {
-          eventsPerSecond: 10,
-        },
-      },
-      ...options,
-    }
-  );
+    },
+    ...options,
+  });
 };
 
 // Export types for external use

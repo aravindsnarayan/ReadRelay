@@ -7,6 +7,7 @@ import { Button } from '../base/Button';
 import { Text, SmallText } from '../base/Typography';
 import { ISBNScanner } from './ISBNScanner';
 import type { BookInput } from '@readrelay/shared';
+import { safeValidateInput, bookSchema } from '@readrelay/shared';
 
 interface BookEntryFormProps {
   initialData?: Partial<BookInput>;
@@ -34,7 +35,13 @@ const FORM_STEPS: FormStep[] = [
     id: 'details',
     title: 'Details & Condition',
     description: 'Add more information about the book',
-    fields: ['description', 'publication_year', 'publisher', 'genre', 'condition'],
+    fields: [
+      'description',
+      'publication_year',
+      'publisher',
+      'genre',
+      'condition',
+    ],
   },
   {
     id: 'exchange',
@@ -92,7 +99,9 @@ export const BookEntryForm: React.FC<BookEntryFormProps> = ({
     language: 'en', // Default language as per schema
     ...initialData,
   });
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [validationErrors, setValidationErrors] = useState<
+    Record<string, string>
+  >({});
   const [showISBNScanner, setShowISBNScanner] = useState(false);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
 
@@ -117,85 +126,73 @@ export const BookEntryForm: React.FC<BookEntryFormProps> = ({
     }
   }, [initialData]);
 
-  // Real-time field validation
+  // Real-time field validation using shared Zod schema
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const validateField = useCallback((fieldName: string, value: any): string | null => {
-    switch (fieldName) {
-      case 'title':
-        if (!value || value.trim().length === 0) return 'Title is required';
-        if (value.length > 255) return 'Title must be less than 255 characters';
-        break;
-      case 'author':
-        if (!value || value.trim().length === 0) return 'Author is required';
-        if (value.length > 255) return 'Author must be less than 255 characters';
-        break;
-      case 'isbn':
-        if (value && !/^\d{10}(\d{3})?$/.test(value.replace(/[-\s]/g, ''))) {
-          return 'Invalid ISBN format';
+  const validateField = useCallback(
+    (fieldName: string, value: any): string | null => {
+      // Create a partial data object for validation
+      const testData = { ...formData, [fieldName]: value };
+
+      // Use the shared validation schema
+      const result = safeValidateInput(bookSchema.partial(), testData);
+
+      if (!result.success) {
+        // Find error for this specific field
+        const fieldError = result.error.errors.find(err =>
+          err.path.includes(fieldName)
+        );
+        if (fieldError) {
+          return fieldError.message;
         }
-        break;
-      case 'description':
-        if (value && value.length > 2000) return 'Description must be less than 2000 characters';
-        break;
-      case 'publisher':
-        if (value && value.length > 200) return 'Publisher must be less than 200 characters';
-        break;
-      case 'genre':
-        if (value && value.length > 100) return 'Genre must be less than 100 characters';
-        break;
-      case 'publication_year':
-        if (value) {
-          const year = parseInt(value);
-          const currentYear = new Date().getFullYear();
-          if (year < 1000 || year > currentYear) {
-            return `Year must be between 1000 and ${currentYear}`;
-          }
-        }
-        break;
-      case 'max_borrow_days':
-        if (formData.exchange_type === 'borrow' && (!value || value < 1 || value > 365)) {
-          return 'Borrow days must be between 1 and 365';
-        }
-        break;
-      case 'condition':
-        if (!value) return 'Condition is required';
-        break;
-      case 'exchange_type':
-        if (!value) return 'Exchange type is required';
-        break;
-      default:
-        break;
-    }
-    return null;
-  }, [formData.exchange_type]);
+      }
+
+      // Additional business logic validation
+      if (
+        fieldName === 'max_borrow_days' &&
+        formData.exchange_type === 'borrow' &&
+        !value
+      ) {
+        return 'Maximum borrow days is required for borrow exchanges';
+      }
+
+      return null;
+    },
+    [formData]
+  );
 
   // Handle field changes with validation
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleFieldChange = useCallback((fieldName: string, value: any) => {
-    setFormData((prev: Partial<BookInput>) => ({ ...prev, [fieldName]: value }));
-    
-    // Real-time validation
-    const error = validateField(fieldName, value);
-    setValidationErrors((prev: Record<string, string>) => ({
-      ...prev,
-      [fieldName]: error || '',
-    }));
+  const handleFieldChange = useCallback(
+    (fieldName: string, value: any) => {
+      setFormData((prev: Partial<BookInput>) => ({
+        ...prev,
+        [fieldName]: value,
+      }));
 
-    // Clear validation error when field is corrected
-    if (!error && validationErrors[fieldName]) {
-      setValidationErrors((prev: Record<string, string>) => {
-        const newErrors = { ...prev };
-        delete newErrors[fieldName];
-        return newErrors;
-      });
-    }
-  }, [validateField, validationErrors]);
+      // Real-time validation
+      const error = validateField(fieldName, value);
+      setValidationErrors((prev: Record<string, string>) => ({
+        ...prev,
+        [fieldName]: error || '',
+      }));
+
+      // Clear validation error when field is corrected
+      if (!error && validationErrors[fieldName]) {
+        setValidationErrors((prev: Record<string, string>) => {
+          const newErrors = { ...prev };
+          delete newErrors[fieldName];
+          return newErrors;
+        });
+      }
+    },
+    [validateField, validationErrors]
+  );
 
   // Handle ISBN scanning
   const handleISBNDetected = useCallback(async (isbn: string) => {
     setShowISBNScanner(false);
     setFormData((prev: Partial<BookInput>) => ({ ...prev, isbn }));
-    
+
     // Try to auto-fill book data from ISBN
     setIsLoadingSuggestions(true);
     try {
@@ -209,9 +206,11 @@ export const BookEntryForm: React.FC<BookEntryFormProps> = ({
             author: bookData.book.author || prev.author,
             description: bookData.book.description || prev.description,
             publisher: bookData.book.publisher || prev.publisher,
-            publication_year: bookData.book.publication_year || prev.publication_year,
+            publication_year:
+              bookData.book.publication_year || prev.publication_year,
             genre: bookData.book.genre || prev.genre,
-            cover_image_url: bookData.book.cover_image_url || prev.cover_image_url,
+            cover_image_url:
+              bookData.book.cover_image_url || prev.cover_image_url,
           }));
         }
       }
@@ -233,7 +232,10 @@ export const BookEntryForm: React.FC<BookEntryFormProps> = ({
       const error = validateField(fieldName, value);
       if (error) {
         hasErrors = true;
-        setValidationErrors((prev: Record<string, string>) => ({ ...prev, [fieldName]: error }));
+        setValidationErrors((prev: Record<string, string>) => ({
+          ...prev,
+          [fieldName]: error,
+        }));
       }
     });
 
@@ -256,31 +258,42 @@ export const BookEntryForm: React.FC<BookEntryFormProps> = ({
 
   // Submit form
   const handleSubmit = useCallback(() => {
-    if (validateCurrentStep()) {
-      // Ensure required fields are set with defaults
-      const submitData: BookInput = {
-        title: formData.title || '',
-        author: formData.author || '',
-        condition: formData.condition || 'good',
-        exchange_type: formData.exchange_type || 'borrow',
-        language: formData.language || 'en',
-        isbn: formData.isbn,
-        description: formData.description,
-        publisher: formData.publisher,
-        publication_year: formData.publication_year,
-        genre: formData.genre,
-        cover_image_url: formData.cover_image_url,
-        max_borrow_days: formData.max_borrow_days,
-        tags: formData.tags,
-        external_id: formData.external_id,
-        external_source: formData.external_source,
-      };
-      
-      // Clear draft
+    // Final validation using shared schema
+    const submitData = {
+      title: formData.title || '',
+      author: formData.author || '',
+      condition: formData.condition || 'good',
+      exchange_type: formData.exchange_type || 'borrow',
+      language: 'en', // Always set to 'en' for now
+      isbn: formData.isbn,
+      description: formData.description,
+      publisher: formData.publisher,
+      publication_year: formData.publication_year,
+      genre: formData.genre,
+      cover_image_url: formData.cover_image_url,
+      max_borrow_days: formData.max_borrow_days,
+      tags: formData.tags,
+      external_id: formData.external_id,
+      external_source: formData.external_source,
+    };
+
+    const validationResult = safeValidateInput(bookSchema, submitData);
+
+    if (validationResult.success) {
+      // Clear draft and submit
       localStorage.removeItem('book-entry-draft');
-      onSubmit(submitData);
+      onSubmit(validationResult.data as BookInput);
+    } else {
+      // Set validation errors from Zod
+      const newErrors: Record<string, string> = {};
+      validationResult.error.errors.forEach(err => {
+        if (err.path.length > 0) {
+          newErrors[err.path[0]] = err.message;
+        }
+      });
+      setValidationErrors(newErrors);
     }
-  }, [validateCurrentStep, formData, onSubmit]);
+  }, [formData, onSubmit]);
 
   // Progress indicator
   const progressPercentage = ((currentStep + 1) / FORM_STEPS.length) * 100;
@@ -296,18 +309,18 @@ export const BookEntryForm: React.FC<BookEntryFormProps> = ({
               <Input
                 label="Title *"
                 value={formData.title || ''}
-                onChange={(value) => handleFieldChange('title', value)}
+                onChange={value => handleFieldChange('title', value)}
                 error={validationErrors.title}
                 placeholder="Enter book title"
                 required
               />
             </div>
-            
+
             <div>
               <Input
                 label="Author *"
                 value={formData.author || ''}
-                onChange={(value) => handleFieldChange('author', value)}
+                onChange={value => handleFieldChange('author', value)}
                 error={validationErrors.author}
                 placeholder="Enter author name"
                 required
@@ -319,7 +332,7 @@ export const BookEntryForm: React.FC<BookEntryFormProps> = ({
                 <Input
                   label="ISBN (optional)"
                   value={formData.isbn || ''}
-                  onChange={(value) => handleFieldChange('isbn', value)}
+                  onChange={value => handleFieldChange('isbn', value)}
                   error={validationErrors.isbn}
                   placeholder="Enter ISBN or scan barcode"
                   className="flex-1"
@@ -348,7 +361,7 @@ export const BookEntryForm: React.FC<BookEntryFormProps> = ({
               <TextArea
                 label="Description (optional)"
                 value={formData.description || ''}
-                onChange={(value) => handleFieldChange('description', value)}
+                onChange={value => handleFieldChange('description', value)}
                 error={validationErrors.description}
                 placeholder="Brief description of the book"
                 rows={3}
@@ -360,15 +373,20 @@ export const BookEntryForm: React.FC<BookEntryFormProps> = ({
                 label="Publication Year"
                 type="number"
                 value={formData.publication_year?.toString() || ''}
-                onChange={(value) => handleFieldChange('publication_year', parseInt(value) || undefined)}
+                onChange={value =>
+                  handleFieldChange(
+                    'publication_year',
+                    parseInt(value) || undefined
+                  )
+                }
                 error={validationErrors.publication_year}
                 placeholder="YYYY"
               />
-              
+
               <Input
                 label="Publisher"
                 value={formData.publisher || ''}
-                onChange={(value) => handleFieldChange('publisher', value)}
+                onChange={value => handleFieldChange('publisher', value)}
                 placeholder="Publisher name"
               />
             </div>
@@ -379,7 +397,9 @@ export const BookEntryForm: React.FC<BookEntryFormProps> = ({
               </label>
               <select
                 value={formData.genre || ''}
-                onChange={(e) => handleFieldChange('genre', e.target.value || undefined)}
+                onChange={e =>
+                  handleFieldChange('genre', e.target.value || undefined)
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="">Select genre</option>
@@ -390,7 +410,9 @@ export const BookEntryForm: React.FC<BookEntryFormProps> = ({
                 ))}
               </select>
               {validationErrors.genre && (
-                <SmallText color="error" className="mt-1">{validationErrors.genre}</SmallText>
+                <SmallText color="error" className="mt-1">
+                  {validationErrors.genre}
+                </SmallText>
               )}
             </div>
 
@@ -400,7 +422,7 @@ export const BookEntryForm: React.FC<BookEntryFormProps> = ({
               </label>
               <select
                 value={formData.condition || ''}
-                onChange={(e) => handleFieldChange('condition', e.target.value)}
+                onChange={e => handleFieldChange('condition', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                 required
               >
@@ -412,7 +434,9 @@ export const BookEntryForm: React.FC<BookEntryFormProps> = ({
                 ))}
               </select>
               {validationErrors.condition && (
-                <SmallText color="error" className="mt-1">{validationErrors.condition}</SmallText>
+                <SmallText color="error" className="mt-1">
+                  {validationErrors.condition}
+                </SmallText>
               )}
             </div>
           </div>
@@ -427,7 +451,9 @@ export const BookEntryForm: React.FC<BookEntryFormProps> = ({
               </label>
               <select
                 value={formData.exchange_type || ''}
-                onChange={(e) => handleFieldChange('exchange_type', e.target.value)}
+                onChange={e =>
+                  handleFieldChange('exchange_type', e.target.value)
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                 required
               >
@@ -439,7 +465,9 @@ export const BookEntryForm: React.FC<BookEntryFormProps> = ({
                 ))}
               </select>
               {validationErrors.exchange_type && (
-                <SmallText color="error" className="mt-1">{validationErrors.exchange_type}</SmallText>
+                <SmallText color="error" className="mt-1">
+                  {validationErrors.exchange_type}
+                </SmallText>
               )}
             </div>
 
@@ -449,7 +477,12 @@ export const BookEntryForm: React.FC<BookEntryFormProps> = ({
                   label="Maximum Borrow Days *"
                   type="number"
                   value={formData.max_borrow_days?.toString() || ''}
-                  onChange={(value) => handleFieldChange('max_borrow_days', parseInt(value) || undefined)}
+                  onChange={value =>
+                    handleFieldChange(
+                      'max_borrow_days',
+                      parseInt(value) || undefined
+                    )
+                  }
                   error={validationErrors.max_borrow_days}
                   placeholder="How many days can someone borrow this book?"
                   required
@@ -461,7 +494,12 @@ export const BookEntryForm: React.FC<BookEntryFormProps> = ({
               <Input
                 label="Tags (optional)"
                 value={formData.tags?.join(', ') || ''}
-                onChange={(value) => handleFieldChange('tags', value ? value.split(',').map(tag => tag.trim()) : [])}
+                onChange={value =>
+                  handleFieldChange(
+                    'tags',
+                    value ? value.split(',').map(tag => tag.trim()) : []
+                  )
+                }
                 placeholder="fiction, mystery, fantasy (comma-separated)"
               />
             </div>
@@ -474,11 +512,15 @@ export const BookEntryForm: React.FC<BookEntryFormProps> = ({
   };
 
   return (
-    <div className={`bg-white rounded-lg shadow-lg p-6 max-w-lg mx-auto ${className}`}>
+    <div
+      className={`bg-white rounded-lg shadow-lg p-6 max-w-lg mx-auto ${className}`}
+    >
       {/* Progress indicator */}
       <div className="mb-6">
         <div className="flex justify-between text-sm text-gray-600 mb-2">
-          <span>Step {currentStep + 1} of {FORM_STEPS.length}</span>
+          <span>
+            Step {currentStep + 1} of {FORM_STEPS.length}
+          </span>
           <span>{Math.round(progressPercentage)}% complete</span>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2">
@@ -500,9 +542,7 @@ export const BookEntryForm: React.FC<BookEntryFormProps> = ({
       </div>
 
       {/* Step content */}
-      <div className="mb-6">
-        {renderStepContent()}
-      </div>
+      <div className="mb-6">{renderStepContent()}</div>
 
       {/* Navigation buttons */}
       <div className="flex justify-between gap-4">
@@ -520,27 +560,17 @@ export const BookEntryForm: React.FC<BookEntryFormProps> = ({
 
         <div className="flex gap-2">
           {onCancel && (
-            <Button
-              variant="ghost"
-              onClick={onCancel}
-              disabled={isLoading}
-            >
+            <Button variant="ghost" onClick={onCancel} disabled={isLoading}>
               Cancel
             </Button>
           )}
 
           {currentStep < FORM_STEPS.length - 1 ? (
-            <Button
-              onClick={handleNext}
-              disabled={isLoading}
-            >
+            <Button onClick={handleNext} disabled={isLoading}>
               Next →
             </Button>
           ) : (
-            <Button
-              onClick={handleSubmit}
-              disabled={isLoading}
-            >
+            <Button onClick={handleSubmit} disabled={isLoading}>
               {isLoading ? 'Adding Book...' : 'Add Book'}
             </Button>
           )}
@@ -553,7 +583,7 @@ export const BookEntryForm: React.FC<BookEntryFormProps> = ({
           <ISBNScanner
             onISBNDetected={handleISBNDetected}
             onClose={() => setShowISBNScanner(false)}
-            onError={(error) => {
+            onError={error => {
               // eslint-disable-next-line no-console
               console.error('ISBN Scanner error:', error);
               setShowISBNScanner(false);
@@ -565,4 +595,4 @@ export const BookEntryForm: React.FC<BookEntryFormProps> = ({
   );
 };
 
-export default BookEntryForm; 
+export default BookEntryForm;

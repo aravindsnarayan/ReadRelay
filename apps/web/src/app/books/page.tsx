@@ -35,56 +35,62 @@ export default function BooksPage() {
   const [offset, setOffset] = useState(0);
 
   // Fetch books from API
-  const fetchBooks = useCallback(async (query = '', reset = false) => {
-    try {
-      setIsSearching(true);
-      setError(null);
+  const fetchBooks = useCallback(
+    async (query = '', reset = false) => {
+      try {
+        setIsSearching(true);
+        setError(null);
 
-      const currentOffset = reset ? 0 : offset;
-      const params = new URLSearchParams({
-        limit: '20',
-        offset: currentOffset.toString(),
-      });
+        const currentOffset = reset ? 0 : offset;
+        const params = new URLSearchParams({
+          limit: '20',
+          offset: currentOffset.toString(),
+        });
 
-      if (query.trim()) {
-        params.append('q', query.trim());
-      }
-
-      const response = await fetch(`/api/books?${params}`);
-      const data = await response.json();
-
-      if (data.success) {
-        if (reset) {
-          setBooks(data.books || []);
-          setOffset(0);
-        } else {
-          setBooks(prev => [...prev, ...(data.books || [])]);
+        if (query.trim()) {
+          params.append('q', query.trim());
         }
-        setHasMore(data.hasMore || false);
-        setOffset(prev => prev + (data.books?.length || 0));
-      } else {
-        setError(data.error || 'Failed to load books');
+
+        const response = await fetch(`/api/books?${params}`);
+        const data = await response.json();
+
+        if (data.success) {
+          if (reset) {
+            setBooks(data.books || []);
+            setOffset(0);
+          } else {
+            setBooks(prev => [...prev, ...(data.books || [])]);
+          }
+          setHasMore(data.hasMore || false);
+          setOffset(prev => prev + (data.books?.length || 0));
+        } else {
+          setError(data.error || 'Failed to load books');
+        }
+      } catch (error) {
+        console.error('Failed to fetch books:', error);
+        setError('Failed to load books');
+      } finally {
+        setIsLoading(false);
+        setIsSearching(false);
       }
-    } catch (error) {
-      console.error('Failed to fetch books:', error);
-      setError('Failed to load books');
-    } finally {
-      setIsLoading(false);
-      setIsSearching(false);
-    }
-  }, [offset]);
+    },
+    [offset]
+  );
 
   // Initial load
   useEffect(() => {
     fetchBooks('', true);
-  }, []);
+  }, [fetchBooks]);
 
   // Handle search
-  const handleSearch = useCallback((query: string) => {
-    setSearchQuery(query);
-    setOffset(0);
-    fetchBooks(query, true);
-  }, [fetchBooks]);
+  const handleSearch = useCallback(
+    (query: string) => {
+      setSearchQuery(query);
+      setOffset(0);
+      fetchBooks(query, true);
+    },
+    [fetchBooks]
+  );
 
   // Handle load more
   const handleLoadMore = useCallback(() => {
@@ -196,8 +202,9 @@ export default function BooksPage() {
               <Text color="secondary">
                 {searchQuery ? (
                   <>
-                    Found {books.length} book{books.length !== 1 ? 's' : ''} for "
-                    <span className="font-medium">{searchQuery}</span>"
+                    Found {books.length} book{books.length !== 1 ? 's' : ''} for
+                    &quot;
+                    <span className="font-medium">{searchQuery}</span>&quot;
                   </>
                 ) : (
                   <>Showing {books.length} available books</>
@@ -211,10 +218,14 @@ export default function BooksPage() {
                 id: book.id,
                 title: book.title,
                 author: book.author,
-                coverUrl: book.cover_image_url,
+                cover_image_url: book.cover_image_url,
                 condition: book.condition,
-                availabilityStatus: book.availability_status as 'available' | 'exchanging' | 'unavailable',
-                ownerName: book.owner?.full_name || book.owner?.username || 'Unknown',
+                availability_status: book.availability_status as
+                  | 'available'
+                  | 'exchanging'
+                  | 'unavailable',
+                ownerName:
+                  book.owner?.full_name || book.owner?.username || 'Unknown',
               }))}
               onBookClick={handleBookClick}
               isLoading={isSearching}
@@ -238,4 +249,4 @@ export default function BooksPage() {
       </div>
     </div>
   );
-} 
+}

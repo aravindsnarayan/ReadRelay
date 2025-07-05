@@ -7,9 +7,9 @@ interface BookListItem {
   id: string;
   title: string;
   author: string;
-  coverUrl?: string;
+  cover_image_url?: string | null;
   condition: string;
-  availabilityStatus: 'available' | 'exchanging' | 'unavailable';
+  availability_status: 'available' | 'exchanging' | 'unavailable';
   ownerName: string;
 }
 
@@ -20,7 +20,9 @@ interface BookListProps {
   className?: string;
 }
 
-const StatusBadge: React.FC<{ status: BookListItem['availabilityStatus'] }> = ({ status }) => {
+const StatusBadge: React.FC<{
+  status: BookListItem['availability_status'];
+}> = ({ status }) => {
   const getStatusColor = () => {
     switch (status) {
       case 'available':
@@ -48,7 +50,9 @@ const StatusBadge: React.FC<{ status: BookListItem['availabilityStatus'] }> = ({
   };
 
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor()}`}>
+    <span
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor()}`}
+    >
       {getStatusText()}
     </span>
   );
@@ -71,7 +75,9 @@ const ConditionBadge: React.FC<{ condition: string }> = ({ condition }) => {
   };
 
   return (
-    <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${getConditionColor()}`}>
+    <span
+      className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${getConditionColor()}`}
+    >
       {condition}
     </span>
   );
@@ -92,8 +98,10 @@ export const BookList: React.FC<BookListProps> = ({
   }
 
   return (
-    <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 ${className}`}>
-      {books.map((book) => (
+    <div
+      className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 ${className}`}
+    >
+      {books.map(book => (
         <div
           key={book.id}
           onClick={() => onBookClick(book.id)}
@@ -101,9 +109,9 @@ export const BookList: React.FC<BookListProps> = ({
         >
           {/* Book Cover */}
           <div className="aspect-[3/4] bg-gray-100 relative overflow-hidden">
-            {book.coverUrl ? (
+            {book.cover_image_url ? (
               <img
-                src={book.coverUrl}
+                src={book.cover_image_url}
                 alt={`Cover of ${book.title}`}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
               />
@@ -118,10 +126,10 @@ export const BookList: React.FC<BookListProps> = ({
                 </div>
               </div>
             )}
-            
+
             {/* Status overlay */}
             <div className="absolute top-2 right-2">
-              <StatusBadge status={book.availabilityStatus} />
+              <StatusBadge status={book.availability_status} />
             </div>
           </div>
 
